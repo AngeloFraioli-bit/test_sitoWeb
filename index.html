@@ -1,65 +1,44 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pannello di Controllo Meteo</title>
+    <meta charset="UTF-8">
+    <title>Display Sensore SIM800L</title>
     <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f4f7f6; text-align: center; padding: 50px 20px; color: #333; }
-        .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        h1 { margin-bottom: 5px; font-size: 1.8rem; color: #111; }
-        .status { font-size: 0.85rem; color: #666; margin-bottom: 30px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .box { background: #fafafa; padding: 20px; border-radius: 12px; border: 1px solid #eee; }
-        .label { font-size: 0.9rem; text-transform: uppercase; color: #888; letter-spacing: 0.5px; }
-        .valore { font-size: 2rem; font-weight: bold; margin-top: 10px; color: #0070f3; }
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #fafafa; }
+        .box { border: 2px solid #333; display: inline-block; padding: 40px; border-radius: 8px; background: white; }
+        .dato { font-size: 64px; color: #2ecc71; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Stazione di Monitoraggio</h1>
-        <div class="status">Aggiornamento automatico attivo</div>
-
-        <div class="grid">
-            <div class="box">
-                <div class="label">Temperatura</div>
-                <div id="temp" class="valore">--°C</div>
-            </div>
-            <div class="box">
-                <div class="label">Umidità</div>
-                <div id="hum" class="valore">--%</div>
-            </div>
-        </div>
+    <div class="box">
+        <h2>Dato Sensore in Tempo Reale</h2>
+        <div id="display-sensore" class="dato">---</div>
+        <p id="info">In attesa di dati...</p>
     </div>
 
     <script>
-        // INSERISCI QUI L'URL DEL TUO WORKER CLOUDFLARE
-        const WORKER_URL = "https://rapid-tree-f68b.angelofraioli.workers.dev/";
+        // Incolla lo stesso identico URL del tuo Cloudflare Worker
+        const URL_WORKER = "https://workers.dev";
 
-        async function scaricaDati() {
-            try {
-                // Interroga il worker in background
-                const response = await fetch(WORKER_URL);
-                if (!response.ok) throw new Error("Errore di rete");
-                
-                const dati = await response.json();
-                
-                // Inserisce i dati nei rispettivi elementi HTML
-                document.getElementById('temp').innerText = dati.temperatura + "°C";
-                document.getElementById('hum').innerText = dati.umidita + "%";
-            } catch (errore) {
-                console.error("Impossibile recuperare i dati:", errore);
-                document.getElementById('temp').innerText = "Errore";
-                document.getElementById('hum').innerText = "Errore";
-            }
+        function scaricaDatoDallESP32() {
+            fetch(URL_WORKER)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.valore !== undefined) {
+                        document.getElementById("display-sensore").innerText = data.valore;
+                        document.getElementById("info").innerText = "Ultimo agg: " + new Date().toLocaleTimeString();
+                    }
+                })
+                .catch(err => {
+                    console.error("Errore:", err);
+                    document.getElementById("info").innerText = "Errore di connessione al bridge web.";
+                });
         }
 
-        // Avvia la prima lettura all'apertura del file
-        scaricaDati();
-
-        // Aggiorna lo schermo automaticamente ogni 5 secondi (5000 millisecondi)
-        setInterval(scaricaDati, 5000);
+        // Chiede il dato al serverless worker ogni 5 secondi
+        setInterval(scaricaDatoDallESP32, 5000);
+        scaricaDatoDallESP32(); // Esecuzione immediata al caricamento
     </script>
 </body>
 </html>
