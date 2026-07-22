@@ -18,6 +18,34 @@
     </div>
 
     <script>
+        // INSERISCI QUI L'URL DEL TUO WORKER CLOUDFLARE
+        const WORKER_URL = "https://rapid-tree-f68b.angelofraioli.workers.dev/";
+
+        async function scaricaDato() {
+            try {
+                // Interroga il worker in background
+                const response = await fetch(WORKER_URL);
+                if (!response.ok) throw new Error("Errore di rete");
+                
+                const data = await response.json();
+                
+                // Inserisce i dati nei rispettivi elementi HTML
+                document.getElementById("display-sensore").innerText = data.valore;
+                document.getElementById("info").innerText = "Ultimo agg: " + new Date().toLocaleTimeString();
+            } catch (errore) {
+                console.error("Errore:", err);
+                document.getElementById("info").innerText = "Errore di connessione al bridge web.";
+            }
+        }
+
+        // Avvia la prima lettura all'apertura del file
+        scaricaDato();
+
+        // Aggiorna lo schermo automaticamente ogni 5 secondi (5000 millisecondi)
+        setInterval(scaricaDato, 5000);
+    </script>
+    <!--
+    <script>
         // Incolla lo stesso identico URL del tuo Cloudflare Worker
         const URL_WORKER = "https://rapid-tree-f68b.angelofraioli.workers.dev";
 
@@ -40,5 +68,6 @@
         setInterval(scaricaDatoDallESP32, 5000);
         scaricaDatoDallESP32(); // Esecuzione immediata al caricamento
     </script>
+    -->
 </body>
 </html>
